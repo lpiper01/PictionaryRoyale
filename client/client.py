@@ -25,17 +25,27 @@ class Client:
         self.inbox = Queue()
         self.outbox = Queue()
         self.chat = Chat()
-        self.panel = Panel(None)
+
+        # Panel which belongs to the client
+        self.main_panel = Panel(True, 'CLIENT')
+        # Panels owned by other connected clients
+        self.other_panels = []
 
     def add_panel(self, panel_id):
         """Adds a panel with the given ID to the Client.
         """
-        pass
+        new_panel = Panel(panel_id)
+        other_panels.append(new_panel)
 
     def remove_panel(self, panel_id):
         """Removes the panel with given ID.
         """
-        pass
+        index = None
+        for current, panel in enumerate(other_panels):
+            if panel.getID() == panel_id:
+                index = current;
+
+
 
     def _send(self, event):
         """Sends the given event to the server

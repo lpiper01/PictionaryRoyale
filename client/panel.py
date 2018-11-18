@@ -10,7 +10,7 @@ class Panel:
     An INACTIVE Panel receives lists of points from the server. It then draws
     lines between these points.
     """
-    def __init__(self, active):
+    def __init__(self, active, ID):
         pass
 
     def connect_points(self, points):
