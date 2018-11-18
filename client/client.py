@@ -1,12 +1,19 @@
 #!/usr/bin/env python2
-
 import pygame
+from pygame.locals import *
 from panel import Panel
 from chat  import Chat
 from Queue import Queue
 pygame.init()
 
-SIZE = (WIDTH, HEIGHT) = (580, 260)
+SIZE = (WIDTH, HEIGHT) = (1080, 900)
+PANELSIZE = (300, 300)
+# TWEAKS:
+# - producer/consumer model between server and client?
+# - resizable?
+
+def rel_to_abs(rel_x, rel_y, gap = 5):
+    return (rel_x * (gap + PANELSIZE[0]), rel_y * (gap + PANELSIZE[1]))
 
 class Client:
     """Client for Pictionary
@@ -24,12 +31,19 @@ class Client:
         self.server = None
         self.inbox = Queue()
         self.outbox = Queue()
-        self.chat = Chat()
+        self.running = True
+        # Client's canvas + chat
+        panel_location = rel_to_abs(0, 0)
+        chat_location = rel_to_abs(1, 0)
+        print panel_location
+        print chat_location
+        self.chat = Chat(chat_location, PANELSIZE)
+        self.main_panel = Panel(True, 'CLIENT', panel_location, PANELSIZE)
 
-        # Panel which belongs to the client
-        self.main_panel = Panel(True, 'CLIENT')
-        # Panels owned by other connected clients
+        # Panels 'owned' by other connected clients
         self.other_panels = []
+
+        self._loop()
 
     def add_panel(self, panel_id):
         """Adds a panel with the given ID to the Client.
@@ -46,21 +60,53 @@ class Client:
                 index = current;
 
 
-
-    def _send(self, event):
-        """Sends the given event to the server
+    def _post(self, event):
+        """Adds event to outbox, to be sent later
+        """
+        pass
+    
+    def _send(self):
+        """Sends all events in outbox to server
         """
         pass
 
     def _receive(self):
-        """Receives a list of events from the server and processes them.
+        """Receives a list of events from the server and adds to inbox
         """
         pass
 
-    def loop(self):
-        """Sends messages to server. Receives messages from server. Updates.
+    def _process(self):
+        """Updates state based on received messages
         """
         pass
+
+    def _draw(self):
+        # TODO: draw at specific locations
+        self.screen.fill((0,0,0))
+        self.main_panel.draw(self.screen)
+        self.chat.draw(self.screen)
+        for panel in self.other_panels:
+            panel.draw(self.screen)
+
+        pygame.display.update()
+
+    def _pygame_process(self):
+        """Handles keyboard, mouse, other internal stuff"""
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                self.running = False
+
+    def _loop(self):
+        """Sends messages to server. Receives messages from server. Updates.
+        """
+        while self.running:
+            self._send()
+            self._receive()
+            self._process()
+            self._draw()
+            self._pygame_process()
+        # TODO: event handling
+        pygame.quit()
 
 
 if __name__ == "__main__":
