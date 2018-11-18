@@ -29,11 +29,11 @@ class Client:
     """
 
     def __init__(self):
-        self.screen = pygame.display.set_mode(SIZE)
+        self.size = SIZE
         self.running = True
         self.turn = False
+        self.screen = pygame.display.set_mode(self.size)
 
-        self.size = SIZE
         self.server = None
         self.inbox = Queue()
         self.outbox = Queue()
@@ -42,56 +42,57 @@ class Client:
         panel_location = rel_to_abs(0, 0)
         chat_location = rel_to_abs(1, 0)
         self.chat = Chat(chat_location, PANELSIZE, self.screen)
+        self.main_panel = Panel('CLIENT', panel_location, PANELSIZE, self.screen)
+        self.main_panel.toggle()
+        
+        # TMP TESTING
         self.chat.static_broadcast("E", "E")
         self.chat.local_broadcast("Louis", "Hello1")
         self.chat.static_broadcast("E", "F")
         self.chat.local_broadcast("Louis", "Hello2")
         self.chat.static_broadcast("E", "G")
 
-        self.main_panel = Panel('CLIENT', panel_location, PANELSIZE, self.screen)
-
         # Panels 'owned' by other connected clients
         self.other_panels = []
 
-        self._loop()
-
     def add_panel(self, panel_id):
-        """Adds a panel with the given ID to the Client.
+        """Add a panel with the given ID to the Client.
         """
         new_panel = Panel(panel_id)
         other_panels.append(new_panel)
 
     def remove_panel(self, panel_id):
-        """Removes the panel with given ID.
+        """Remove the panel with given ID.
         """
+        # WOULD PROBABLY BREAK STUFF RIGHT NOW
         index = None
         for current, panel in enumerate(other_panels):
             if panel.getID() == panel_id:
                 index = current;
 
-
     def _post(self, event):
-        """Adds event to outbox, to be sent later
+        """Add event to outbox, to be sent later
         """
         pass
 
     def _send(self):
-        """Sends all events in outbox to server
+        """Send all events in outbox to server
         """
         pass
 
     def _receive(self):
-        """Receives a list of events from the server and adds to inbox
+        """Receive a list of events from the server and adds to inbox
         """
         pass
 
     def _process(self):
-        """Updates state based on received messages
+        """Update state based on received messages
         """
         pass
 
     def _draw(self):
-        # TODO: draw at specific locations
+        """Draw all components and update display
+        """
         self.screen.fill((0,0,0))
         self.main_panel.clear()
         self.main_panel.draw()
@@ -107,8 +108,9 @@ class Client:
         for event in pygame.event.get():
             if event.type == QUIT:
                 self.running = False
+            # TODO: Keyboard + Mouse events -> 'package' + send to server
 
-    def _loop(self):
+    def loop(self):
         """Sends messages to server. Receives messages from server. Updates.
         """
         while self.running:
@@ -117,9 +119,10 @@ class Client:
             self._process()
             self._draw()
             self._pygame_process()
-        # TODO: event handling
+
         pygame.quit()
 
 
 if __name__ == "__main__":
-    client = Client();
+    client = Client()
+    client.loop()
