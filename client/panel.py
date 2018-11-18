@@ -1,5 +1,8 @@
 import pygame
 
+ACTIVECOLOR = (255, 255, 102)
+INACTIVECOLOR = (128, 128, 128)
+
 class Panel:
     """A Panel is a NxM canvas supporting client and server drawing.
 
@@ -9,18 +12,17 @@ class Panel:
     An INACTIVE Panel receives lists of points from the server. It then draws
     lines between these points.
     """
-    def __init__(self, active, ID, location, size):
-        self.active = active
+    def __init__(self, ID, location, size, parent):
+        self.active = False
         self.ID = ID
         self.location = location
-
-        self.canvas = pygame.Surface(size)
-        # all objects that need to be drawn to the screen
+        self.size = size
+        self.canvas = pygame.Surface(self.size)
+        self.parent = parent
         self.color = (255, 255, 255)
 
     def connect_points(self, points):
         """Draws a solid line between the points
-
         E.G. [(0,0), (1, 1), (3, 4)] draws a line between (0,0) and (1, 1)
         and then between (1, 1) and (3, 4)
         """
@@ -33,8 +35,24 @@ class Panel:
         """
         pass;
 
-    def draw(self, window):
-        """Draws the Panel onto window"""
+    def blit(self, surface, pos):
+        self.canvas.blit(surface, pos)
+        self.parent.blit(self.canvas, self.location)
+
+    def toggle(self):
+        self.active = not self.active
+
+    def clear(self):
         self.canvas.fill(self.color)
-        window.blit(self.canvas, self.location)
+
+    def draw(self):
+        """Draws the Panel onto window
+        """
+        left, top = self.location
+        width, height = self.size
+        outline = pygame.Rect(left - 5, top - 5, width + 10, height + 10)
+        outline_color = ACTIVECOLOR if self.active else INACTIVECOLOR
+
+        pygame.draw.rect(self.parent, outline_color, outline, 0)
+        self.parent.blit(self.canvas, self.location)
 

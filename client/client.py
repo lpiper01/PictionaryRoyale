@@ -12,8 +12,12 @@ PANELSIZE = (300, 300)
 # - producer/consumer model between server and client?
 # - resizable?
 
-def rel_to_abs(rel_x, rel_y, gap = 5):
-    return (rel_x * (gap + PANELSIZE[0]), rel_y * (gap + PANELSIZE[1]))
+def rel_to_abs(rel_x, rel_y, gap = 10):
+    offset_x = rel_x * PANELSIZE[0]
+    offset_y = rel_y * PANELSIZE[1]
+    gap_x = (rel_x + 1) * gap
+    gap_y = (rel_y + 1) * gap
+    return (offset_x + gap_x, offset_y + gap_y)
 
 class Client:
     """Client for Pictionary
@@ -26,19 +30,25 @@ class Client:
 
     def __init__(self):
         self.screen = pygame.display.set_mode(SIZE)
+        self.running = True
         self.turn = False
+
         self.size = SIZE
         self.server = None
         self.inbox = Queue()
         self.outbox = Queue()
-        self.running = True
+
         # Client's canvas + chat
         panel_location = rel_to_abs(0, 0)
         chat_location = rel_to_abs(1, 0)
-        print panel_location
-        print chat_location
-        self.chat = Chat(chat_location, PANELSIZE)
-        self.main_panel = Panel(True, 'CLIENT', panel_location, PANELSIZE)
+        self.chat = Chat(chat_location, PANELSIZE, self.screen)
+        self.chat.static_broadcast("E", "E")
+        self.chat.local_broadcast("Louis", "Hello1")
+        self.chat.static_broadcast("E", "F")
+        self.chat.local_broadcast("Louis", "Hello2")
+        self.chat.static_broadcast("E", "G")
+
+        self.main_panel = Panel('CLIENT', panel_location, PANELSIZE, self.screen)
 
         # Panels 'owned' by other connected clients
         self.other_panels = []
@@ -64,7 +74,7 @@ class Client:
         """Adds event to outbox, to be sent later
         """
         pass
-    
+
     def _send(self):
         """Sends all events in outbox to server
         """
@@ -83,10 +93,12 @@ class Client:
     def _draw(self):
         # TODO: draw at specific locations
         self.screen.fill((0,0,0))
-        self.main_panel.draw(self.screen)
-        self.chat.draw(self.screen)
+        self.main_panel.clear()
+        self.main_panel.draw()
+        self.chat.draw()
         for panel in self.other_panels:
-            panel.draw(self.screen)
+            panel.clear()
+            panel.draw()
 
         pygame.display.update()
 
@@ -110,6 +122,4 @@ class Client:
 
 
 if __name__ == "__main__":
-    
     client = Client();
-
