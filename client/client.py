@@ -15,7 +15,9 @@ PANELSIZE = (300, 300)
 DEBUG = True
 CLIENT_NAME = 'CLIENT'
 FPS_LIMIT = 100
-
+LINE_DIVISOR = 10
+LINES_INDEX = 1
+PANEL_INDEX = 0
 # TODO:
 # - resizable?
 def rel_to_abs(rel_x, rel_y, gap = 10):
@@ -161,20 +163,24 @@ class Client:
         self._draw()
 
     def startline(self, panel_id, pos):
+        """Begins a new line on the given panel"""
         target_panel = self.panels[panel_id]
-        target_panel[1].append([pos])
+        target_panel[LINES_INDEX].append([pos])
 
     # TODO: instead of adding then removing, just don't add certain points
     def endline(self, panel_id, pos):
+        """Ends the last line on the given panel"""
         target_panel = self.panels[panel_id]
-        target_line = len(target_panel[1]) - 1
-        target_panel[1][target_line].append(pos)
-        target_panel[1][target_line] = target_panel[1][target_line][0::10]
+        target_linenum = len(target_panel[LINES_INDEX]) - 1
+        target_line = target_panel[LINES_INDEX][target_linenum]
+        target_line.append(pos)
+        target_line = target_line[0::LINE_DIVISOR]
 
     def addpoint(self, panel_id, pos):
+        """Adds a point to the last line on the given panel"""
         target_panel = self.panels[panel_id]
-        target_line = len(target_panel[1]) - 1
-        target_panel[1][target_line].append(pos)
+        target_line = len(target_panel[LINES_INDEX]) - 1
+        target_panel[LINES_INDEX][target_line].append(pos)
 
     def _draw(self):
         """Draw all components and update display
@@ -183,8 +189,8 @@ class Client:
         self.chat_panel.draw()
 
         for user in self.panels:
-            panel = self.panels[user][0]
-            lines = self.panels[user][1]
+            panel = self.panels[user][PANEL_INDEX]
+            lines = self.panels[user][LINES_INDEX]
             panel.clear()
             panel.draw(lines)
 
