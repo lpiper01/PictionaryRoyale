@@ -44,13 +44,27 @@ class Client:
         self.chat = Chat(chat_location, PANELSIZE, self.screen)
         self.main_panel = Panel('CLIENT', panel_location, PANELSIZE, self.screen)
         self.main_panel.toggle()
-        
+
         # TMP TESTING
+
+
         self.chat.static_broadcast("E", "E")
         self.chat.local_broadcast("Louis", "Hello1")
         self.chat.static_broadcast("E", "F")
         self.chat.local_broadcast("Louis", "Hello2")
         self.chat.static_broadcast("E", "G")
+        self.chat.local_broadcast("Louis", "Hello3")
+        self.chat.local_broadcast("Louis", "Hello4")
+        self.chat.local_broadcast("Louis", "Hello5")
+        self.chat.local_broadcast("Louis", "Hello6")
+        self.chat.local_broadcast("Louis", "Hello3")
+        self.chat.local_broadcast("Louis", "Hello4")
+        self.chat.local_broadcast("Louis", "Hello5")
+        self.chat.local_broadcast("Louis", "Hello6")
+        self.chat.local_broadcast("Louis", "Hello3")
+        self.chat.local_broadcast("Louis", "Hello4")
+        self.chat.local_broadcast("Louis", "Hello5")
+        self.chat.local_broadcast("Louis", "Hello6")
 
         # Panels 'owned' by other connected clients
         self.other_panels = []

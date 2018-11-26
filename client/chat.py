@@ -3,8 +3,9 @@ from recentlist import RecentList
 from collections import deque
 from panel import Panel
 
-MAX_MESSAGES = 10
+MAX_MESSAGES = 12
 FONTSIZE = 16
+FONT = "resources/fonts/ubuntu.ttf"
 X_OFFSET = 5
 Y_OFFSET = 5
 FONT_GAP = 3
@@ -19,7 +20,7 @@ class Chat:
         self.panel = Panel('CHAT', location, size, parent)
         self.history_size = MAX_MESSAGES
         self.messages = RecentList(self.history_size)
-        self.font = pygame.font.Font(None, 24)
+        self.font = pygame.font.Font(FONT, FONTSIZE)
         self.permanent = []
 
     def static_broadcast(self, status, message):
@@ -28,7 +29,6 @@ class Chat:
         self.history_size -= 1
         self.messages.set_limit(self.history_size)
         self.permanent.append(status + ": " + message)
-        pass
 
     def local_broadcast(self, status, message):
         '''Displays a message without sending it to the server
@@ -69,3 +69,4 @@ class Chat:
             self.display_message(message, num, CHAT_COLOR)
 
         self.panel.draw()
+
