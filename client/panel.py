@@ -39,8 +39,11 @@ class Panel:
         self.canvas.blit(surface, pos)
         self.parent.blit(self.canvas, self.location)
 
-    def toggle(self):
-        self.active = not self.active
+    def set_enable(self, val):
+        self.active = val
+
+    def get_enable(self):
+        return self.active
 
     def clear(self):
         self.canvas.fill(self.color)

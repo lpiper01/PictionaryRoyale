@@ -13,7 +13,7 @@ STATIC_COLOR = (0, 0, 0)
 CHAT_COLOR = (0, 0, 255)
 
 class Chat:
-    """Specialized panel which sends and receives chat messages
+    """Send/Receive messages; draw to panel
     """
 
     def __init__(self, location, size, parent):
@@ -23,37 +23,24 @@ class Chat:
         self.font = pygame.font.Font(FONT, FONTSIZE)
         self.permanent = []
 
-    def static_broadcast(self, status, message):
+    def static_message(self, status, message):
         """Displays a permanent static message (local-only)
         """
         self.history_size -= 1
         self.messages.set_limit(self.history_size)
         self.permanent.append(status + ": " + message)
 
-    def local_broadcast(self, status, message):
+    def local_message(self, status, message):
         '''Displays a message without sending it to the server
         '''
         self.messages.add(str(status) + ": " + str(message))
 
-    def global_broadcast(self, message):
+    def global_message(self, message):
         '''Sends a message to the server and local_broadcast it
         '''
         self.messages.add(str(status) + ": " + str(message))
         # TODO: send to server, remove above line (wait for server reply to
         # write our input to prevent out of order)
-
-    def display_message(self, message, num, color):
-        '''Draw the num-th message to the Panel (lower = prior message)
-        '''
-        text = self.font.render(message, 1, color)
-        pos = self.font_pos(num)
-
-        self.panel.blit(text, pos)
-
-    def font_pos(self, num):
-        '''Determines where the nth message ought to be placed'''
-        _, height = self.font.size("A") # Need Y height - any string works
-        return (X_OFFSET, Y_OFFSET + num * (height + FONT_GAP))
 
     def draw(self):
         self.panel.clear()
@@ -61,12 +48,24 @@ class Chat:
         num = 0
         for message in self.permanent:
             # Write each message to self.panel
-            self.display_message(message, num, STATIC_COLOR)
+            self._display_message(message, num, STATIC_COLOR)
             num += 1
 
         for message in self.messages:
             num += 1 # adds gap between permanent and chat
-            self.display_message(message, num, CHAT_COLOR)
+            self._display_message(message, num, CHAT_COLOR)
 
         self.panel.draw()
 
+    def _display_message(self, message, num, color):
+        '''Draw the num-th message to the Panel (lower = prior message)
+        '''
+        text = self.font.render(message, 1, color)
+        pos = self._font_pos(num)
+
+        self.panel.blit(text, pos)
+
+    def _font_pos(self, num):
+        '''Determines where the nth message ought to be placed'''
+        _, height = self.font.size("A") # Need Y height - any string works
+        return (X_OFFSET, Y_OFFSET + num * (height + FONT_GAP))

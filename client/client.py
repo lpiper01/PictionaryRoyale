@@ -1,15 +1,20 @@
 #!/usr/bin/env python2
 import pygame
+import sys
 from pygame.locals import *
-from panel import Panel
-from chat  import Chat
-from Queue import Queue
+from panel         import Panel
+from chat          import Chat
+from network       import NetworkHandler
+from event         import EventHandler
+from Queue         import Queue
+
 pygame.init()
 
 SIZE = (WIDTH, HEIGHT) = (1080, 900)
 PANELSIZE = (300, 300)
-# TWEAKS:
-# - producer/consumer model between server and client?
+DEBUG = True
+
+# TODO:
 # - resizable?
 
 def rel_to_abs(rel_x, rel_y, gap = 10):
@@ -19,13 +24,70 @@ def rel_to_abs(rel_x, rel_y, gap = 10):
     gap_y = (rel_y + 1) * gap
     return (offset_x + gap_x, offset_y + gap_y)
 
+class App:
+    def __init__(self, node):
+        self.nw_handler = NetworkHandler(node)
+        self.event_handler = EventHandler()
+        self.client = Client()
+        self.running = True
+        self.actions = {"EXIT" : self._exit, "DRAW" : self._draw}
+
+    def loop(self):
+        """Main execution loop"""
+        while self.running:
+            # Handle input & changes
+            self._process()
+
+            # communicate changes to user
+            self.client.process()
+
+        # TODO: send termination signal to child processes
+        sys.exit()
+
+    def _process(self):
+        """Get changes from handlers and update program state"""
+        self.event_handler.process()
+        self.nw_handler.process()
+
+        gui_events = self.event_handler.get()
+        network_events = self.nw_handler.get()
+
+        self._do_events(gui_events)
+        self._do_events(network_events)
+
+    def _do_events(self, events):
+        """Execute the commands defined by a list of events"""
+        while len(events) > 0:
+            event = events.pop()
+            command = event[0]
+            params = event[1]
+
+            self._do(command, params)
+
+    def _do(self, command, params):
+        """Translate a string into a function and execute it"""
+        cmd_func = self.actions[command]
+        cmd_func(params)
+
+
+    def _exit(self, params):
+        self.running = False
+
+    def _draw(self, params):
+        print "Drawing to point: " + str(params)
+        color = params[0]
+        pos = params[1]
+        self.client.draw_point(color, pos)
+
 class Client:
     """Client for Pictionary
 
     This defines the player's viewable area. It is comprised
-    of panels, at minimum the CHAT panel and the CLIENT panel.
+    of panels, at minimum the CHAT, CLIENT and one OTHER panel
+
     The CHAT panel sends and receives chat messages.
     The CLIENT panel sends mouse events IF it is the client's turn
+    The OTHER panel(s) draw(s) the images sent by the server
     """
 
     def __init__(self):
@@ -34,40 +96,34 @@ class Client:
         self.turn = False
         self.screen = pygame.display.set_mode(self.size)
 
-        self.server = None
-        self.inbox = Queue()
-        self.outbox = Queue()
-
         # Client's canvas + chat
         panel_location = rel_to_abs(0, 0)
         chat_location = rel_to_abs(1, 0)
-        self.chat = Chat(chat_location, PANELSIZE, self.screen)
+        self.chat_panel = Chat(chat_location, PANELSIZE, self.screen)
         self.main_panel = Panel('CLIENT', panel_location, PANELSIZE, self.screen)
-        self.main_panel.toggle()
-
-        # TMP TESTING
-
-
-        self.chat.static_broadcast("E", "E")
-        self.chat.local_broadcast("Louis", "Hello1")
-        self.chat.static_broadcast("E", "F")
-        self.chat.local_broadcast("Louis", "Hello2")
-        self.chat.static_broadcast("E", "G")
-        self.chat.local_broadcast("Louis", "Hello3")
-        self.chat.local_broadcast("Louis", "Hello4")
-        self.chat.local_broadcast("Louis", "Hello5")
-        self.chat.local_broadcast("Louis", "Hello6")
-        self.chat.local_broadcast("Louis", "Hello3")
-        self.chat.local_broadcast("Louis", "Hello4")
-        self.chat.local_broadcast("Louis", "Hello5")
-        self.chat.local_broadcast("Louis", "Hello6")
-        self.chat.local_broadcast("Louis", "Hello3")
-        self.chat.local_broadcast("Louis", "Hello4")
-        self.chat.local_broadcast("Louis", "Hello5")
-        self.chat.local_broadcast("Louis", "Hello6")
+        self.main_panel.set_enable(True)
 
         # Panels 'owned' by other connected clients
         self.other_panels = []
+
+        # TMP TESTING
+        self.chat_panel.static_message("E", "E")
+        self.chat_panel.local_message("Louis", "Hello1")
+        self.chat_panel.static_message("E", "F")
+        self.chat_panel.local_message("Louis", "Hello2")
+        self.chat_panel.static_message("E", "G")
+        self.chat_panel.local_message("Louis", "Hello3")
+        self.chat_panel.local_message("Louis", "Hello4")
+        self.chat_panel.local_message("Louis", "Hello5")
+        self.chat_panel.local_message("Louis", "Hello6")
+        self.chat_panel.local_message("Louis", "Hello3")
+        self.chat_panel.local_message("Louis", "Hello4")
+        self.chat_panel.local_message("Louis", "Hello5")
+        self.chat_panel.local_message("Louis", "Hello6")
+        self.chat_panel.local_message("Louis", "Hello3")
+        self.chat_panel.local_message("Louis", "Hello4")
+        self.chat_panel.local_message("Louis", "Hello5")
+        self.chat_panel.local_message("Louis", "Hello6")
 
     def add_panel(self, panel_id):
         """Add a panel with the given ID to the Client.
@@ -80,63 +136,32 @@ class Client:
         """
         # WOULD PROBABLY BREAK STUFF RIGHT NOW
         index = None
-        for current, panel in enumerate(other_panels):
+        for current, panel in enumerate(self.other_panels):
             if panel.getID() == panel_id:
                 index = current;
 
-    def _post(self, event):
-        """Add event to outbox, to be sent later
-        """
-        pass
+        self.other_panels.pop(index)
 
-    def _send(self):
-        """Send all events in outbox to server
+    def process(self):
+        """Draw updates to screen, handle events
         """
-        pass
+        self._draw()
 
-    def _receive(self):
-        """Receive a list of events from the server and adds to inbox
-        """
-        pass
 
-    def _process(self):
-        """Update state based on received messages
-        """
-        pass
-
+    
     def _draw(self):
         """Draw all components and update display
         """
         self.screen.fill((0,0,0))
         self.main_panel.clear()
         self.main_panel.draw()
-        self.chat.draw()
+        self.chat_panel.draw()
         for panel in self.other_panels:
             panel.clear()
             panel.draw()
 
         pygame.display.update()
 
-    def _pygame_process(self):
-        """Handles keyboard, mouse, other internal stuff"""
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                self.running = False
-            # TODO: Keyboard + Mouse events -> 'package' + send to server
-
-    def loop(self):
-        """Sends messages to server. Receives messages from server. Updates.
-        """
-        while self.running:
-            self._send()
-            self._receive()
-            self._process()
-            self._draw()
-            self._pygame_process()
-
-        pygame.quit()
-
-
 if __name__ == "__main__":
-    client = Client()
-    client.loop()
+    app = App(None)
+    app.loop()
