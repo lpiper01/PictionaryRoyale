@@ -5,13 +5,16 @@ pygame.init()
 
 KEYEVENTS = [pygame.KEYDOWN, pygame.KEYUP]
 MOUSEEVENTS = [pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION]
+CLIENT_NAME = 'CLIENT'
 
 class EventHandler:
     """Container of gui events
 
     Events are of form (COMMAND, [PARAMLIST])
     """
+
     def __init__(self):
+        self.mousedown = False
         self.events = []
 
     def process(self):
@@ -33,6 +36,12 @@ class EventHandler:
         pass
 
     def _handle_mouse(self, event):
-        if event.type == pygame.MOUSEMOTION and event.buttons[0]:
-            self.events.append(("DRAW", [(0, 0, 0), event.pos]))
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            self.mousedown = True
+            self.events.append(("STARTLINES", [CLIENT_NAME, event.pos]))
+        elif event.type == pygame.MOUSEBUTTONUP:
+            self.mousedown = False
+            self.events.append(("ENDLINES", [CLIENT_NAME, event.pos]))
+        elif event.type == pygame.MOUSEMOTION and self.mousedown:
+            self.events.append(("ADDPOINT", [CLIENT_NAME, event.pos]))
 

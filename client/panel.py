@@ -18,6 +18,8 @@ class Panel:
         self.location = location
         self.size = size
         self.canvas = pygame.Surface(self.size)
+        self.rect = self.canvas.get_rect()
+        self.rect.move(self.location)
         self.parent = parent
         self.color = (255, 255, 255)
 
@@ -26,14 +28,15 @@ class Panel:
         E.G. [(0,0), (1, 1), (3, 4)] draws a line between (0,0) and (1, 1)
         and then between (1, 1) and (3, 4)
         """
-        pass
+        pygame.draw.lines(self.canvas, False, points, 3)
 
     def contains(self, point):
         """If the panel is ACTIVE and point is within it, returns true.
 
         Else returns false
         """
-        pass;
+
+        return self.rect.collidepoint(point)
 
     def blit(self, surface, pos):
         self.canvas.blit(surface, pos)
@@ -48,7 +51,7 @@ class Panel:
     def clear(self):
         self.canvas.fill(self.color)
 
-    def draw(self):
+    def draw(self, lines = []):
         """Draws the Panel onto window
         """
         left, top = self.location
@@ -57,5 +60,7 @@ class Panel:
         outline_color = ACTIVECOLOR if self.active else INACTIVECOLOR
 
         pygame.draw.rect(self.parent, outline_color, outline, 0)
+        for line in lines:
+            if len(line) > 1:
+                pygame.draw.lines(self.canvas, (0, 0, 0), False, line, 3)
         self.parent.blit(self.canvas, self.location)
-
