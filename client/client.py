@@ -14,7 +14,7 @@ SIZE = (WIDTH, HEIGHT) = (1080, 900)
 PANELSIZE = (300, 300)
 DEBUG = True
 CLIENT_NAME = 'CLIENT'
-FPS_LIMIT = 30
+FPS_LIMIT = 100
 
 # TODO:
 # - resizable?
@@ -60,7 +60,7 @@ class App:
     def _do_events(self, events):
         """Execute the commands defined by a list of events"""
         while len(events) > 0:
-            event = events.pop()
+            event = events.popleft()
             command = event[0]
             params = event[1]
 
@@ -161,8 +161,6 @@ class Client:
         """
         self._draw()
 
-    # MAJOR BUG: IF YOU CLICK RAPIDLY AND SLIDE ACROSS THE TOUCHPAD IT CRASHES
-    # SUPPORT OTHER PANELS
     def startline(self, panel_id, pos):
         print "START"
         if panel_id == CLIENT_NAME:
@@ -174,7 +172,7 @@ class Client:
             current_line = len(self.lines) - 1
             self.lines[current_line].append(pos)
             # LOWER RESOLUTION FOR NETWORK USE
-            self.lines[current_line] = self.lines[current_line][0:-1:10]
+            self.lines[current_line] = self.lines[current_line][0::10]
 
     def addpoint(self, panel_id, pos):
         if panel_id == CLIENT_NAME:

@@ -1,5 +1,6 @@
 import pygame
 from pygame.locals import *
+from collections import deque
 import sys
 pygame.init()
 
@@ -15,7 +16,7 @@ class EventHandler:
 
     def __init__(self):
         self.mousedown = False
-        self.events = []
+        self.events = deque()
 
     def process(self):
         for event in pygame.event.get():
@@ -36,12 +37,13 @@ class EventHandler:
         pass
 
     def _handle_mouse(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.MOUSEBUTTONDOWN and not self.mousedown:
             self.mousedown = True
             self.events.append(("STARTLINES", [CLIENT_NAME, event.pos]))
-        elif event.type == pygame.MOUSEBUTTONUP:
+        elif event.type == pygame.MOUSEBUTTONUP and self.mousedown:
             self.mousedown = False
             self.events.append(("ENDLINES", [CLIENT_NAME, event.pos]))
         elif event.type == pygame.MOUSEMOTION and self.mousedown:
             self.events.append(("ADDPOINT", [CLIENT_NAME, event.pos]))
 
+        print self.events
