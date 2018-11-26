@@ -45,5 +45,3 @@ class EventHandler:
             self.events.append(("ENDLINES", [CLIENT_NAME, event.pos]))
         elif event.type == pygame.MOUSEMOTION and self.mousedown:
             self.events.append(("ADDPOINT", [CLIENT_NAME, event.pos]))
-
-        print self.events

@@ -17,7 +17,7 @@ class Chat:
     """
 
     def __init__(self, location, size, parent):
-        self.panel = Panel('CHAT', location, size, parent)
+        self.panel = Panel(location, size, parent)
         self.history_size = MAX_MESSAGES
         self.messages = RecentList(self.history_size)
         self.font = pygame.font.Font(FONT, FONTSIZE)

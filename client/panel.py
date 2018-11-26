@@ -12,9 +12,8 @@ class Panel:
     An INACTIVE Panel receives lists of points from the server. It then draws
     lines between these points.
     """
-    def __init__(self, ID, location, size, parent):
+    def __init__(self, location, size, parent):
         self.active = False
-        self.ID = ID
         self.location = location
         self.size = size
         self.canvas = pygame.Surface(self.size)

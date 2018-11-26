@@ -112,13 +112,12 @@ class Client:
         panel_location = rel_to_abs(0, 0)
         chat_location = rel_to_abs(1, 0)
         self.chat_panel = Chat(chat_location, PANELSIZE, self.screen)
-        self.main_panel = Panel(CLIENT_NAME, panel_location, PANELSIZE, self.screen)
-        self.main_panel.set_enable(True)
-        self.lines = []
 
         # Panels 'owned' by other connected clients
         # form: {panel_id : (Panel, [list of lines])}
-        self.other_panels = {}
+        main_panel =  Panel(panel_location, PANELSIZE, self.screen)
+        main_panel.set_enable(True)
+        self.panels = {CLIENT_NAME : (main_panel, [])}
 
         # TMP TESTING
         self.chat_panel.static_message("E", "E")
@@ -162,37 +161,32 @@ class Client:
         self._draw()
 
     def startline(self, panel_id, pos):
-        print "START"
-        if panel_id == CLIENT_NAME:
-            self.lines.append([pos])
+        target_panel = self.panels[panel_id]
+        target_panel[1].append([pos])
 
     # TODO: instead of adding then removing, just don't add certain points
     def endline(self, panel_id, pos):
-        if panel_id == CLIENT_NAME:
-            current_line = len(self.lines) - 1
-            self.lines[current_line].append(pos)
-            # LOWER RESOLUTION FOR NETWORK USE
-            self.lines[current_line] = self.lines[current_line][0::10]
+        target_panel = self.panels[panel_id]
+        target_line = len(target_panel[1]) - 1
+        target_panel[1][target_line].append(pos)
+        target_panel[1][target_line] = target_panel[1][target_line][0::10]
 
     def addpoint(self, panel_id, pos):
-        if panel_id == CLIENT_NAME:
-            current_line = len(self.lines) - 1
-            print current_line
-            self.lines[current_line].append(pos)
+        target_panel = self.panels[panel_id]
+        target_line = len(target_panel[1]) - 1
+        target_panel[1][target_line].append(pos)
 
     def _draw(self):
         """Draw all components and update display
         """
         self.screen.fill((0,0,0))
-        self.main_panel.clear()
-        self.main_panel.draw(self.lines)
         self.chat_panel.draw()
 
-        for user in self.other_panels:
-            panel = user[0]
-            lines = user[1]
+        for user in self.panels:
+            panel = self.panels[user][0]
+            lines = self.panels[user][1]
             panel.clear()
-            panel.draw()
+            panel.draw(lines)
 
         pygame.display.update()
         self.clock.tick(FPS_LIMIT)
