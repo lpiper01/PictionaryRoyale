@@ -141,19 +141,12 @@ class Client:
     def add_panel(self, panel_id):
         """Add a panel with the given ID to the Client.
         """
-        new_panel = Panel(panel_id)
-        other_panels.append(new_panel)
+        pass
 
     def remove_panel(self, panel_id):
         """Remove the panel with given ID.
         """
-        # WOULD PROBABLY BREAK STUFF RIGHT NOW
-        index = None
-        for current, panel in enumerate(self.other_panels):
-            if panel.getID() == panel_id:
-                index = current;
-
-        self.other_panels.pop(index)
+        pass
 
     def process(self):
         """Draw updates to screen, handle events
