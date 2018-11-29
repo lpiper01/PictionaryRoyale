@@ -33,7 +33,7 @@ class Chat:
         """
         self.history_size -= 1
         self.messages.set_limit(self.history_size)
-        self.permanent.append(status + ": " + message)
+        self.permanent.append(status + "" + message)
 
     def local_message(self, status, message):
         '''Displays a message without sending it to the server

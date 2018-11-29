@@ -14,18 +14,28 @@ DEBUG = True
 SIZE = (WIDTH, HEIGHT) = (1080, 900)
 PANELSIZE = (300, 300)
 CLIENT_NAME = 'CLIENT'
+CHAT_NAME = 'CHAT'
 FPS_LIMIT = 100
 LINE_DIVISOR = 10
+PANELS = (3, 3)
+
 
 PANEL_INDEX = 0
 LINES_INDEX = 1
 
 def rel_to_abs(rel_x, rel_y, gap = 10):
+    """Finds the absolute position of a panel from its relative screen coords"""
     offset_x = rel_x * PANELSIZE[0]
     offset_y = rel_y * PANELSIZE[1]
     gap_x = (rel_x + 1) * gap
     gap_y = (rel_y + 1) * gap
     return (offset_x + gap_x, offset_y + gap_y)
+
+def find_pos(num):
+    """Finds the next open position based on the panel number"""
+    x = num % PANELS[0]
+    y = num // PANELS[1]
+    return rel_to_abs(x, y)
 
 class App:
     def __init__(self, node):
@@ -122,53 +132,32 @@ class Client:
         self.turn = False
         self.screen = pygame.display.set_mode(self.size)
         self.clock = pygame.time.Clock()
+        self.num_panels = 2
 
         # Client's canvas + chat
-        panel_location = rel_to_abs(0, 0)
-        chat_location = rel_to_abs(1, 0)
+        panel_location = find_pos(0)
+        chat_location = find_pos(1)
         self.chat_panel = Chat(chat_location, PANELSIZE, self.screen)
 
-        # Panels 'owned' by other connected clients
         # form: {panel_id : (Panel, [list of lines])}
         main_panel =  Panel(panel_location, PANELSIZE, self.screen)
         main_panel.set_enable(True)
         self.panels = {CLIENT_NAME : (main_panel, [])}
 
-        # TMP TESTING
-        self.chat_panel.static_message("E", "E")
-        self.chat_panel.local_message("Louis", "Hello1")
-        self.chat_panel.static_message("E", "F")
-        self.chat_panel.local_message("Louis", "Hello2")
-        self.chat_panel.static_message("E", "G")
-        self.chat_panel.local_message("Louis", "Hello3")
-        self.chat_panel.local_message("Louis", "Hello4")
-        self.chat_panel.local_message("Louis", "Hello5")
-        self.chat_panel.local_message("Louis", "Hello6")
-        self.chat_panel.local_message("Louis", "Hello3")
-        self.chat_panel.local_message("Louis", "Hello4")
-        self.chat_panel.local_message("Louis", "Hello5")
-        self.chat_panel.local_message("Louis", "Hello6")
-        self.chat_panel.local_message("Louis", "Hello3")
-        self.chat_panel.local_message("Louis", "Hello4")
-        self.chat_panel.local_message("Louis", "Hello5")
-        self.chat_panel.local_message("Louis", "Hello6")
+        self.chat_panel.static_message("", "Welcome to Pictionary")
 
-    def add_panel(self, panel_id):
+    def add_panel(self, panel_id, num):
         """Add a panel with the given ID to the Client.
         """
-        new_panel = Panel(panel_id)
-        other_panels.append(new_panel)
+        x = num % PANELS[0]
+        y = num // PANELS[1]
+        panel_location = rel_to_abs(x, y)
+        new_panel = Panel(panel_location, PANELSIZE, self.screen)
 
     def remove_panel(self, panel_id):
         """Remove the panel with given ID.
         """
-        # WOULD PROBABLY BREAK STUFF RIGHT NOW
-        index = None
-        for current, panel in enumerate(self.other_panels):
-            if panel.getID() == panel_id:
-                index = current;
-
-        self.other_panels.pop(index)
+        del self.panels[panel_id]
 
     def process(self):
         """Draw updates to screen, handle events
@@ -193,7 +182,6 @@ class Client:
         """Adds a point to the last line on the given panel"""
         target_panel = self.panels[panel_id]
         target_line = len(target_panel[LINES_INDEX]) - 1
-        print "hi"
         target_panel[LINES_INDEX][target_line].append(pos)
 
     def sendchar(self, char):
