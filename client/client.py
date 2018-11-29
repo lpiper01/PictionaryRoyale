@@ -16,6 +16,9 @@ DEBUG = True
 CLIENT_NAME = 'CLIENT'
 FPS_LIMIT = 100
 
+PANEL_INDEX = 0
+LINES_INDEX = 1
+
 # TODO:
 # - resizable?
 def rel_to_abs(rel_x, rel_y, gap = 10):
@@ -76,16 +79,19 @@ class App:
         self.running = False
 
     def _startline(self, params):
+        """Begins a line in a given panel at pos"""
         panel_id = params[0]
         pos = params[1]
         self.client.startline(panel_id, pos)
 
     def _endline(self, params):
+        """Ends a line in a given panel, terminating at pos"""
         panel_id = params[0]
         pos = params[1]
         self.client.endline(panel_id, pos)
 
     def _addpoint(self, params):
+        """Adds a point to the most recently begun line in a panel at pos"""
         panel_id = params[0]
         pos = params[1]
         self.client.addpoint(panel_id, pos)
@@ -109,6 +115,7 @@ class Client:
         self.clock = pygame.time.Clock()
 
         # Client's canvas + chat
+        # TODO: Add chat to the panels dictionary (should be treated the same as any other panel)
         panel_location = rel_to_abs(0, 0)
         chat_location = rel_to_abs(1, 0)
         self.chat_panel = Chat(chat_location, PANELSIZE, self.screen)
@@ -155,19 +162,19 @@ class Client:
 
     def startline(self, panel_id, pos):
         target_panel = self.panels[panel_id]
-        target_panel[1].append([pos])
+        target_panel[LINES_INDEX].append([pos])
 
     # TODO: instead of adding then removing, just don't add certain points
     def endline(self, panel_id, pos):
         target_panel = self.panels[panel_id]
-        target_line = len(target_panel[1]) - 1
-        target_panel[1][target_line].append(pos)
-        target_panel[1][target_line] = target_panel[1][target_line][0::10]
+        target_line = len(target_panel[LINES_INDEX]) - 1
+        target_panel[LINES_INDEX][target_line].append(pos)
+        target_panel[LINES_INDEX][target_line] = target_panel[LINES_INDEX][target_line][0::10]
 
     def addpoint(self, panel_id, pos):
         target_panel = self.panels[panel_id]
-        target_line = len(target_panel[1]) - 1
-        target_panel[1][target_line].append(pos)
+        target_line = len(target_panel[LINES_INDEX]) - 1
+        target_panel[LINES_INDEX][target_line].append(pos)
 
     def _draw(self):
         """Draw all components and update display
@@ -176,8 +183,8 @@ class Client:
         self.chat_panel.draw()
 
         for user in self.panels:
-            panel = self.panels[user][0]
-            lines = self.panels[user][1]
+            panel = self.panels[user][PANEL_INDEX]
+            lines = self.panels[user][LINES_INDEX]
             panel.clear()
             panel.draw(lines)
 
