@@ -3,14 +3,17 @@ from recentlist import RecentList
 from collections import deque
 from panel import Panel
 
-MAX_MESSAGES = 12
+MAX_MESSAGES = 11
+LAST_SPOT = 12
 FONTSIZE = 16
 FONT = "resources/fonts/ubuntu.ttf"
 X_OFFSET = 5
-Y_OFFSET = 5
+Y_OFFSET = 0
 FONT_GAP = 3
 STATIC_COLOR = (0, 0, 0)
+ENTRY_COLOR = (0, 127, 127)
 CHAT_COLOR = (0, 0, 255)
+PROMPT = list(">>> ")
 
 class Chat:
     """Send/Receive messages; draw to panel
@@ -22,6 +25,8 @@ class Chat:
         self.messages = RecentList(self.history_size)
         self.font = pygame.font.Font(FONT, FONTSIZE)
         self.permanent = []
+        self.name = "NULL"
+        self.text_entry = PROMPT[:] # want a copy
 
     def static_message(self, status, message):
         """Displays a permanent static message (local-only)
@@ -35,7 +40,7 @@ class Chat:
         '''
         self.messages.add(str(status) + ": " + str(message))
 
-    def global_message(self, message):
+    def global_message(self, status, message):
         '''Sends a message to the server and local_broadcast it
         '''
         self.messages.add(str(status) + ": " + str(message))
@@ -55,7 +60,24 @@ class Chat:
             num += 1 # adds gap between permanent and chat
             self._display_message(message, num, CHAT_COLOR)
 
+        num = LAST_SPOT
+        text = ''.join(self.text_entry)
+
+        self._display_message(text, num, ENTRY_COLOR)
         self.panel.draw()
+
+    def sendchar(self, char):
+        self.text_entry.append(char)
+
+    def delchar(self):
+        if len(self.text_entry) > len(PROMPT):
+            self.text_entry.pop()
+
+    def endstr(self):
+        text = self.text_entry[len(PROMPT):]
+        text = ''.join(text)
+        self.global_message(self.name, text)
+        self.text_entry = PROMPT[:] # want a copy
 
     def _display_message(self, message, num, color):
         '''Draw the num-th message to the Panel (lower = prior message)

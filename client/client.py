@@ -10,16 +10,16 @@ from Queue         import Queue
 
 pygame.init()
 
+DEBUG = True
 SIZE = (WIDTH, HEIGHT) = (1080, 900)
 PANELSIZE = (300, 300)
-DEBUG = True
 CLIENT_NAME = 'CLIENT'
 FPS_LIMIT = 100
 LINE_DIVISOR = 10
-LINES_INDEX = 1
+
 PANEL_INDEX = 0
-# TODO:
-# - resizable?
+LINES_INDEX = 1
+
 def rel_to_abs(rel_x, rel_y, gap = 10):
     offset_x = rel_x * PANELSIZE[0]
     offset_y = rel_y * PANELSIZE[1]
@@ -34,7 +34,8 @@ class App:
         self.client = Client()
         self.running = True
         self.actions = {"EXIT" : self._exit, "STARTLINES" : self._startline,
-                        "ENDLINES" : self._endline, "ADDPOINT" : self._addpoint}
+                        "ENDLINES" : self._endline, "ADDPOINT" : self._addpoint,
+                        "KEYDOWN" : self._keydown}
 
     def loop(self):
         """Main execution loop"""
@@ -91,6 +92,18 @@ class App:
         panel_id = params[0]
         pos = params[1]
         self.client.addpoint(panel_id, pos)
+
+    def _keydown(self, params):
+        char = params[0]
+
+        if char == "return":
+            self.client.endstr()
+        elif char == "backspace":
+            self.client.delchar()
+        # Quick and dirty - filter out nondesirable keys
+        # (left ctrl, escape, alt, etc)
+        elif len(char) == 1:
+            self.client.sendchar(char)
 
 class Client:
     """Client for Pictionary
@@ -174,7 +187,7 @@ class Client:
         target_linenum = len(target_panel[LINES_INDEX]) - 1
         target_line = target_panel[LINES_INDEX][target_linenum]
         target_line.append(pos)
-        target_line = target_line[0::LINE_DIVISOR]
+        target_panel[LINES_INDEX][target_linenum]= target_line[0::LINE_DIVISOR]
 
     def addpoint(self, panel_id, pos):
         """Adds a point to the last line on the given panel"""
@@ -182,6 +195,18 @@ class Client:
         target_line = len(target_panel[LINES_INDEX]) - 1
         print "hi"
         target_panel[LINES_INDEX][target_line].append(pos)
+
+    def sendchar(self, char):
+        """Add a character to the chat panel entry box"""
+        self.chat_panel.sendchar(char)
+
+    def endstr(self):
+        """Send string in the chat panel entry box"""
+        self.chat_panel.endstr()
+
+    def delchar(self):
+        """Delete a character from the chat panel entry box"""
+        self.chat_panel.delchar()
 
     def _draw(self):
         """Draw all components and update display
@@ -197,6 +222,7 @@ class Client:
 
         pygame.display.update()
         self.clock.tick(FPS_LIMIT)
+
 
 if __name__ == "__main__":
     app = App(None)

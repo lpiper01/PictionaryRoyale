@@ -34,7 +34,9 @@ class EventHandler:
         self.events.append(("EXIT", [None]))
 
     def _handle_keyboard(self, event):
-        pass
+        if event.type == pygame.KEYDOWN:
+            char = pygame.key.name(event.key)
+            self.events.append(("KEYDOWN", [char]))
 
     def _handle_mouse(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and not self.mousedown:
