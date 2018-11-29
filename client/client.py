@@ -180,6 +180,7 @@ class Client:
         """Adds a point to the last line on the given panel"""
         target_panel = self.panels[panel_id]
         target_line = len(target_panel[LINES_INDEX]) - 1
+        print "hi"
         target_panel[LINES_INDEX][target_line].append(pos)
 
     def _draw(self):
