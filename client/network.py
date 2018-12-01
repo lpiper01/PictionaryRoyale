@@ -1,3 +1,5 @@
+
+
 from Queue import Queue
 class NetworkHandler:
     """Wrapper for Erlang server communication process"""
