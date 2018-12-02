@@ -1,12 +1,4 @@
-%%%-------------------------------------------------------------------
-%%% @author Louis A. Piper Carson <lpiper01@lab120s.eecs.tufts.edu>
-%%% @copyright (C) 2018, Louis A. Piper Carson
-%%% @doc
-%%%
-%%% @end
-%%% Created :  1 Dec 2018 by Louis A. Piper Carson <lpiper01@lab120s.eecs.tufts.edu>
-%%%-------------------------------------------------------------------
--module(server).
+-module(backup).
 
 -behaviour(gen_server).
 
@@ -15,11 +7,9 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-         terminate/2, code_change/3, format_status/2]).
+         terminate/2]).
 
 -define(SERVER, ?MODULE).
-
--record(state, {}).
 
 %%%===================================================================
 %%% API
@@ -35,7 +25,10 @@
                       {error, Error :: term()} |
                       ignore.
 start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+    gen_server:start_link({global, ?SERVER}, ?MODULE, [], []).
+
+stop() ->
+    gen_server:stop({global, ?SERVER}).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -54,7 +47,7 @@ start_link() ->
                               ignore.
 init([]) ->
     process_flag(trap_exit, true),
-    {ok, #state{}}.
+    {ok, {ok, ok, []}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -71,6 +64,7 @@ init([]) ->
                          {noreply, NewState :: term(), hibernate} |
                          {stop, Reason :: term(), Reply :: term(), NewState :: term()} |
                          {stop, Reason :: term(), NewState :: term()}.
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -86,8 +80,9 @@ handle_call(_Request, _From, State) ->
                          {noreply, NewState :: term(), Timeout :: timeout()} |
                          {noreply, NewState :: term(), hibernate} |
                          {stop, Reason :: term(), NewState :: term()}.
+
 handle_cast(_Request, State) ->
-    {noreply, State}.
+    {noReply, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -100,8 +95,27 @@ handle_cast(_Request, State) ->
                          {noreply, NewState :: term(), Timeout :: timeout()} |
                          {noreply, NewState :: term(), hibernate} |
                          {stop, Reason :: normal | term(), NewState :: term()}.
-handle_info(_Info, State) ->
-    {noreply, State}.
+
+handle_info({join, Client}, {Word, Drawer, Players}) ->
+    NewPlayers = [{Client, 0} | Players],
+    {noreply, {Word, Drawer, NewPlayers}};
+
+% Player has correctly guessed drawing word
+handle_info({guess, Client, Word}, {Word, Drawer, Players}) ->
+    NewPlayers = add_points(Players, Client),
+    send_guesses(Players, Word, Client),
+    % Alert all clients the round is over
+    % Update word to new one
+    % Clear all pixels
+    % Send the drawer their word
+    % {noreply, {NewWord, NewDrawer, NewPlayers}};
+    {noreply, {Word, Drawer, NewPlayers}};
+
+% Player incorrectly guessed drawing
+handle_info({guess, Client, IncorrectDrawing}, {Word, Drawer, Players}) ->
+    send_guesses(Players, IncorrectDrawing, Client),
+    {noreply, {Word, Drawer, Players}}.
+
 
 %%--------------------------------------------------------------------
 %% @private
@@ -117,37 +131,29 @@ handle_info(_Info, State) ->
 terminate(_Reason, _State) ->
     ok.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Convert process state when code is changed
-%% @end
-%%--------------------------------------------------------------------
--spec code_change(OldVsn :: term() | {down, term()},
-                  State :: term(),
-                  Extra :: term()) -> {ok, NewState :: term()} |
-                                      {error, Reason :: term()}.
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% This function is called for changing the form and appearance
-%% of gen_server status when it is returned from sys:get_status/1,2
-%% or when it appears in termination error logs.
-%% @end
-%%--------------------------------------------------------------------
--spec format_status(Opt :: normal | terminate,
-                    Status :: list()) -> Status :: term().
-format_status(_Opt, Status) ->
-    Status.
-
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
-;; This buffer is for notes you don't want to save, and for Lisp evaluation.
-;; If you want to create a file, visit that file with C-x C-f,
-;; then enter the text in that file's own buffer.
+%%--------------------------------------------------------------------
+%% Sends a message to all players except the one who made the guess
+%%--------------------------------------------------------------------
+send_guesses([], _Guess, _Exclude) ->
+    ok;
+send_guesses([{Client, _Points} | Rest], Guess, Client) ->
+    send_guesses(Rest, Guess, Client);
+send_guesses([{Pid, _Points} | Rest], Guess, Client) ->
+    Pid ! {guess, Guess},
+    send_guesses(Rest, Guess, Client).
 
+%%--------------------------------------------------------------------
+%% Given a list of all the players and their points, returns a new
+%% list with the winner's points updated
+%%--------------------------------------------------------------------
+add_points([], _Winner) ->
+    ok;
+add_points([{Winner, Points} | Rest], Winner) ->
+    [{Winner, Points + 1} | Rest];
+add_points([{Other, Points} | Rest], Winner) ->
+    [{Other, Points} | add_points(Rest, Winner)].
+    
