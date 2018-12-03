@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 import pygame
 import sys
+
 from pygame.locals import *
 from panel         import Panel
 from chat          import Chat
@@ -9,6 +10,12 @@ from event         import EventHandler
 from Queue         import Queue
 
 pygame.init()
+
+ERLPORT_PATH = './resources/erlport-0.9.8/priv/python2/'
+sys.path.insert(0, ERLPORT_PATH)
+
+from erlport.erlterms import Atom
+import erlport.erlang
 
 DEBUG = True
 SIZE = (WIDTH, HEIGHT) = (1080, 900)
@@ -21,6 +28,16 @@ PANELS = (3, 3)
 
 PANEL_INDEX = 0
 LINES_INDEX = 1
+
+
+def create_network(pid):
+    nw_handler = NetworkHandler(pid)
+
+    def message_handler(message):
+        nw_handler.receive(message)
+
+    erlport.erlang.set_message_handler(message_handler)
+    return nw_handler
 
 def rel_to_abs(rel_x, rel_y, gap = 10):
     """Finds the absolute position of a panel from its relative screen coords"""
@@ -37,8 +54,8 @@ def find_pos(num):
     return rel_to_abs(x, y)
 
 class App:
-    def __init__(self, node):
-        self.nw_handler = NetworkHandler(node)
+    def __init__(self, pid):
+        self.nw_handler = create_network(pid)
         self.event_handler = EventHandler()
         self.client = Client()
         self.running = True
@@ -56,7 +73,8 @@ class App:
             self.client.process()
 
         # TODO: send termination signal to child processes
-        sys.exit()
+        # sys.exit()
+        pygame.quit()
 
     def _process(self):
         """Get changes from handlers and update program state"""
@@ -210,6 +228,10 @@ class Client:
         pygame.display.update()
         self.clock.tick(FPS_LIMIT)
 
+
+def start(pid):
+    app = App(pid)
+    app.loop()
 
 if __name__ == "__main__":
     app = App(None)

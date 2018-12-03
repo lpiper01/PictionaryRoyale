@@ -1,8 +1,19 @@
+import sys
+
+ERLPORT_PATH = './resources/erlport-0.9.8/priv/python2/'
+sys.path.insert(0, ERLPORT_PATH)
+
+from erlport.erlterms import Atom
+import erlport.erlang
+
+
+
 from Queue import Queue
 class NetworkHandler:
     """Wrapper for Erlang server communication process"""
-    def __init__(self, node):
-        self.server = None #spawn an erlang process here
+    def __init__(self, pid):
+        self.serverPID = pid
+        self.PID = erlport.erlang.self()
         self.inbox = []
         self.outbox = []
 
@@ -13,7 +24,6 @@ class NetworkHandler:
     def process(self):
         """Access network to send/receive new messages"""
         self._send()
-        self._receive()
 
     def get(self):
         """Update state based on messages in inbox"""
@@ -23,10 +33,9 @@ class NetworkHandler:
         """Send outbox messages to server through Erlang process"""
         pass
 
-    def _receive(self):
-        """Receive messages that have been sent to Erlang process
+    def receive(self, message):
+        """Receive message that has been sent to Erlang process
 
-        Gets all messages that were sent to the Erlang subprocess; stores
-        them in inbox
+        Get message and store it in inbox
         """
         pass
