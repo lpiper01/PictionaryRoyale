@@ -14,7 +14,7 @@ class NetworkHandler:
     def __init__(self, pid):
         self.serverPID = pid
         self.PID = erlport.erlang.self()
-        self.inbox = []
+        self.inbox = [("DRAWLINE", [[POINTS], color]), ()]
         self.outbox = []
 
     def put(self, message):

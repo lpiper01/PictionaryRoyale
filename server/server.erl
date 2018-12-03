@@ -1,4 +1,4 @@
--module(backup).
+-module(server).
 
 -behaviour(gen_server).
 
@@ -116,7 +116,6 @@ handle_info({guess, Client, IncorrectDrawing}, {Word, Drawer, Players}) ->
     send_guesses(Players, IncorrectDrawing, Client),
     {noreply, {Word, Drawer, Players}}.
 
-
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -156,4 +155,3 @@ add_points([{Winner, Points} | Rest], Winner) ->
     [{Winner, Points + 1} | Rest];
 add_points([{Other, Points} | Rest], Winner) ->
     [{Other, Points} | add_points(Rest, Winner)].
-    
