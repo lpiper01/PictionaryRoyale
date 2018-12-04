@@ -29,11 +29,11 @@ PANELS = (3, 3)
 PANEL_INDEX = 0
 LINES_INDEX = 1
 
-
 def create_network(pid):
     nw_handler = NetworkHandler(pid)
 
     def message_handler(message):
+        print message
         nw_handler.receive(message)
 
     erlport.erlang.set_message_handler(message_handler)

@@ -71,7 +71,7 @@ handle_call(_Request, _From, State) ->
                          {stop, Reason :: term(), NewState :: term()}.
 
 handle_cast(_Request, State) ->
-    {noReply, State}.
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% Handles all messages sent directly to server
@@ -88,6 +88,7 @@ handle_cast(_Request, State) ->
 % Adds the client to the current game of pictionary
 %---------------------------------------------------------------------
 handle_info({join, Client}, {Word, Drawer, Players}) ->
+    io:format("~s~n", ["asdf"]),
     NewPlayers = [{Client, 0} | Players],
     {noreply, {Word, Drawer, NewPlayers}};
 
@@ -120,6 +121,7 @@ handle_info({guess, Client, Word}, {Word, Drawer, Players}) ->
 % Player incorrectly guessed drawing
 handle_info({guess, Client, IncorrectDrawing}, {Word, Drawer, Players}) ->
     send_message(Players, {guess, IncorrectDrawing}, Client),
+    io:write("TESTING~n"),
     {noreply, {Word, Drawer, Players}};
 
 %---------------------------------------------------------------------

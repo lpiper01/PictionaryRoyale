@@ -15,5 +15,6 @@ server(Cookie) ->
     set_cookie(node(), Cookie),
     {ok, Pid} = server:start_link(),
     register(server, Pid),
-    server.
+    io:format("~w~n", [Pid]),
+    is_pid(server).
 

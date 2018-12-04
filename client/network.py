@@ -6,8 +6,6 @@ sys.path.insert(0, ERLPORT_PATH)
 from erlport.erlterms import Atom
 import erlport.erlang
 
-
-
 from Queue import Queue
 class NetworkHandler:
     """Wrapper for Erlang server communication process"""
@@ -16,6 +14,8 @@ class NetworkHandler:
         self.PID = erlport.erlang.self()
         self.inbox = []
         self.outbox = []
+
+        erlport.erlang.cast(self.serverPID, (Atom("join"), self.PID))
 
     def put(self, message):
         """Add message to outbox"""
