@@ -230,6 +230,7 @@ class Client:
 
 
 def start(pid):
+
     app = App(pid)
     app.loop()
 

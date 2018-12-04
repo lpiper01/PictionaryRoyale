@@ -1,0 +1,8 @@
+#!/bin/bash
+
+resources="-pa ./server ./client  ./client/resources/erlport-0.9.8/ebin/"
+
+cmd="erl -sname $1 ${resources}"
+
+echo $cmd
+eval $cmd

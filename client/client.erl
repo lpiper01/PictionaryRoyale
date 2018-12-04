@@ -1,7 +1,7 @@
 -module(client).
 
--export([start/0]).
+-export([start/1]).
 
-start() ->
-    {ok, P} = python:start(),
-    python:call(P, client, start, [self()]).
+
+start(Pid) ->
+
