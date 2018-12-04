@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
-%% API
+%% Public functions
 -export([start_link/0]).
 
 %% gen_server callbacks
@@ -12,13 +12,11 @@
 -define(SERVER, ?MODULE).
 
 %%%===================================================================
-%%% API
+%%% PUBLIC FUNCTIONS
 %%%===================================================================
 
 %%--------------------------------------------------------------------
-%% @doc
 %% Starts the server
-%% @end
 %%--------------------------------------------------------------------
 -spec start_link() -> {ok, Pid :: pid()} |
                       {error, Error :: {already_started, pid()}} |
@@ -31,14 +29,11 @@ stop() ->
     gen_server:stop({global, ?SERVER}).
 
 %%%===================================================================
-%%% gen_server callbacks
+%%% GEN_SERVER CALLBACKS
 %%%===================================================================
 
 %%--------------------------------------------------------------------
-%% @private
-%% @doc
 %% Initializes the server
-%% @end
 %%--------------------------------------------------------------------
 -spec init(Args :: term()) -> {ok, State :: term()} |
                               {ok, State :: term(), Timeout :: timeout()} |
@@ -50,10 +45,7 @@ init([]) ->
     {ok, {ok, ok, []}}.
 
 %%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling call messages
-%% @end
+%% Handles synchronous call messages that require a reply
 %%--------------------------------------------------------------------
 -spec handle_call(Request :: term(), From :: {pid(), term()}, State :: term()) ->
                          {reply, Reply :: term(), NewState :: term()} |
@@ -70,10 +62,7 @@ handle_call(_Request, _From, State) ->
     {reply, Reply, State}.
 
 %%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling cast messages
-%% @end
+%% Handles asynchronous cast messages with no reply
 %%--------------------------------------------------------------------
 -spec handle_cast(Request :: term(), State :: term()) ->
                          {noreply, NewState :: term()} |
@@ -85,10 +74,8 @@ handle_cast(_Request, State) ->
     {noReply, State}.
 
 %%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling all non call/cast messages
-%% @end
+%% Handles all messages sent directly to server
+%% Supports join, start, guess, and draw commands
 %%--------------------------------------------------------------------
 -spec handle_info(Info :: timeout() | term(), State :: term()) ->
                          {noreply, NewState :: term()} |
@@ -96,34 +83,58 @@ handle_cast(_Request, State) ->
                          {noreply, NewState :: term(), hibernate} |
                          {stop, Reason :: normal | term(), NewState :: term()}.
 
+%---------------------------------------------------------------------
+% Messages of the form {join, Pid}
+% Adds the client to the current game of pictionary
+%---------------------------------------------------------------------
 handle_info({join, Client}, {Word, Drawer, Players}) ->
     NewPlayers = [{Client, 0} | Players],
     {noreply, {Word, Drawer, NewPlayers}};
 
+%---------------------------------------------------------------------
+% Messages of the form {start, Pid}
+% Starts a game of pictionary with all the current players
+%---------------------------------------------------------------------
+handle_info({start, Client}, {State}) ->
+    % TODO: Pick the first word
+    % TODO: Send that word to the first player
+    {noreply, {State}};
+
+%---------------------------------------------------------------------
+% Messages of the form {guess, Pid, Message}
+% Takes in Message as a guess of what the current drawing is. 
+% Shows the message on every player's screen, and ends the current
+% round if the guess is correct
+%---------------------------------------------------------------------
 % Player has correctly guessed drawing word
 handle_info({guess, Client, Word}, {Word, Drawer, Players}) ->
     NewPlayers = add_points(Players, Client),
-    send_guesses(Players, Word, Client),
-    % Alert all clients the round is over
-    % Update word to new one
-    % Clear all pixels
-    % Send the drawer their word
-    % {noreply, {NewWord, NewDrawer, NewPlayers}};
+    send_message(Players, {guess, Word}, Client),
+    % TODO: Alert all clients the round is over
+    % TODO: Update word to new one
+    % TODO: Clear all pixels
+    % TODO: Send the drawer their word
+    % TODO: {noreply, {NewWord, NewDrawer, NewPlayers}};
     {noreply, {Word, Drawer, NewPlayers}};
 
 % Player incorrectly guessed drawing
 handle_info({guess, Client, IncorrectDrawing}, {Word, Drawer, Players}) ->
-    send_guesses(Players, IncorrectDrawing, Client),
+    send_message(Players, {guess, IncorrectDrawing}, Client),
+    {noreply, {Word, Drawer, Players}};
+
+%---------------------------------------------------------------------
+% Messages of the form {draw, Pid, Changes}
+% Sends the drawers pixel changes to all of the guessers
+%---------------------------------------------------------------------
+handle_info({draw, Client, Changes}, {Word, Drawer, Players}) ->
+    send_message(Players, {draw, Changes}, Client),
     {noreply, {Word, Drawer, Players}}.
 
 %%--------------------------------------------------------------------
-%% @private
-%% @doc
 %% This function is called by a gen_server when it is about to
 %% terminate. It should be the opposite of Module:init/1 and do any
 %% necessary cleaning up. When it returns, the gen_server terminates
 %% with Reason. The return value is ignored.
-%% @end
 %%--------------------------------------------------------------------
 -spec terminate(Reason :: normal | shutdown | {shutdown, term()} | term(),
                 State :: term()) -> any().
@@ -131,19 +142,20 @@ terminate(_Reason, _State) ->
     ok.
 
 %%%===================================================================
-%%% Internal functions
+%%% HELPER FUNCTIONS
 %%%===================================================================
 
 %%--------------------------------------------------------------------
-%% Sends a message to all players except the one who made the guess
+%% Sends given message to all players except the specified client
+%% that sent the message.
 %%--------------------------------------------------------------------
-send_guesses([], _Guess, _Exclude) ->
+send_message([], _Message, _Exclude) ->
     ok;
-send_guesses([{Client, _Points} | Rest], Guess, Client) ->
-    send_guesses(Rest, Guess, Client);
-send_guesses([{Pid, _Points} | Rest], Guess, Client) ->
-    Pid ! {guess, Guess},
-    send_guesses(Rest, Guess, Client).
+send_message([{Client, _Points} | Rest], Message, Client) ->
+    send_message(Rest, Message, Client);
+send_message([{Pid, _Points} | Rest], Message, Client) ->
+    Pid ! Message,
+    send_message(Rest, Message, Client).
 
 %%--------------------------------------------------------------------
 %% Given a list of all the players and their points, returns a new
