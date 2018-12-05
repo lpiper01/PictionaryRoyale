@@ -5,6 +5,7 @@ sys.path.insert(0, ERLPORT_PATH)
 
 from erlport.erlterms import Atom
 import erlport.erlang
+from collections import deque
 
 from Queue import Queue
 
@@ -13,8 +14,8 @@ class NetworkHandler:
     def __init__(self, pid):
         self.serverPID = pid
         self.PID = erlport.erlang.self()
-        self.inbox = []
-        self.outbox = []
+        self.inbox = deque()
+        self.outbox = deque()
 
         erlport.erlang.cast(self.serverPID, (Atom("join"), self.PID))
 
@@ -40,10 +41,10 @@ class NetworkHandler:
         Get message and store it in inbox
         """
         command, client, args = message
+        client = ""
 
         print "Gottem"
         if command == Atom('guess'):
-            print "Appended"
             self.inbox.append(("GUESS", [client, args]))
 
         else:

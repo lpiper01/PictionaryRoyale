@@ -31,7 +31,8 @@ LINES_INDEX = 1
 
 def start(serverPID):
     app = App(serverPID)
-    threading.Thread(target=loop, args=(app,))
+    a = threading.Thread(target=loop, args=(app,))
+    a.start()
 
 def loop(app):
     app.loop()
