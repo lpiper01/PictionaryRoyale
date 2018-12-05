@@ -25,7 +25,6 @@ CHAT_NAME = 'CHAT'
 FPS_LIMIT = 100
 LINE_DIVISOR = 10
 PANELS = (3, 3)
-
 PANEL_INDEX = 0
 LINES_INDEX = 1
 
@@ -33,7 +32,6 @@ def create_network(pid):
     nw_handler = NetworkHandler(pid)
 
     def message_handler(message):
-        print message
         nw_handler.receive(message)
 
     erlport.erlang.set_message_handler(message_handler)
@@ -61,7 +59,7 @@ class App:
         self.running = True
         self.actions = {"EXIT" : self._exit, "STARTLINES" : self._startline,
                         "ENDLINES" : self._endline, "ADDPOINT" : self._addpoint,
-                        "KEYDOWN" : self._keydown}
+                        "KEYDOWN" : self._keydown, "GUESS" : self._guess}
 
     def loop(self):
         """Main execution loop"""
@@ -93,6 +91,9 @@ class App:
             event = events.popleft()
             command = event[0]
             params = event[1]
+
+            print command
+            print params
 
             self._do(command, params)
 
@@ -131,6 +132,12 @@ class App:
         # (left ctrl, escape, alt, etc)
         elif len(char) == 1:
             self.client.sendchar(char)
+
+    def _guess(self, params):
+        username, message = params
+        print "GUESS RECEIVED"
+        print params
+        self.client.localmessage(username, message)
 
 class Client:
     """Client for Pictionary
@@ -228,6 +235,12 @@ class Client:
         pygame.display.update()
         self.clock.tick(FPS_LIMIT)
 
+    def localmessage(self, username, message):
+
+        self.chat_panel.local_message(username, message)
+
+    def globalmessage(self, username, message):
+        self.chat_panel.global_message(username, message)
 
 def start(pid):
 

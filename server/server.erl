@@ -110,7 +110,7 @@ handle_info({start, Client}, {State}) ->
 % Player has correctly guessed drawing word
 handle_info({guess, Client, Word}, {Word, Drawer, Players}) ->
     NewPlayers = add_points(Players, Client),
-    send_message(Players, {guess, Word}, Client),
+    send_message(Players, {guess, Client, Word}, Client),
     % TODO: Alert all clients the round is over
     % TODO: Update word to new one
     % TODO: Clear all pixels
@@ -120,7 +120,7 @@ handle_info({guess, Client, Word}, {Word, Drawer, Players}) ->
 
 % Player incorrectly guessed drawing
 handle_info({guess, Client, IncorrectDrawing}, {Word, Drawer, Players}) ->
-    send_message(Players, {guess, IncorrectDrawing}, Client),
+    send_message(Players, {guess, Client, IncorrectDrawing}, Client),
     io:write("TESTING~n"),
     {noreply, {Word, Drawer, Players}};
 
@@ -129,7 +129,7 @@ handle_info({guess, Client, IncorrectDrawing}, {Word, Drawer, Players}) ->
 % Sends the drawers pixel changes to all of the guessers
 %---------------------------------------------------------------------
 handle_info({draw, Client, Changes}, {Word, Drawer, Players}) ->
-    send_message(Players, {draw, Changes}, Client),
+    send_message(Players, {draw, Client, Changes}, Client),
     {noreply, {Word, Drawer, Players}}.
 
 %%--------------------------------------------------------------------

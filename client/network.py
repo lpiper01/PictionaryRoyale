@@ -3,11 +3,14 @@ import sys
 ERLPORT_PATH = './resources/erlport-0.9.8/priv/python2/'
 sys.path.insert(0, ERLPORT_PATH)
 
+
+
 from erlport.erlterms import Atom
 import erlport.erlang
 
 from Queue import Queue
-class NetworkHandler:
+
+class NetworkHandler(Thread):
     """Wrapper for Erlang server communication process"""
     def __init__(self, pid):
         self.serverPID = pid
@@ -33,9 +36,17 @@ class NetworkHandler:
         """Send outbox messages to server through Erlang process"""
         pass
 
-    def receive(self, message):
-        """Receive message that has been sent to Erlang process
+    def receive(self,j message):
+        """Receive message that has been sent by Erlang process
 
         Get message and store it in inbox
         """
-        pass
+        command, client, args = message
+
+        print "Gottem"
+        if command == Atom('guess'):
+            print "Appended"
+            self.inbox.append(("GUESS", [client, args]))
+
+        else:
+            print "unknown"
