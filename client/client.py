@@ -8,7 +8,8 @@ from chat          import Chat
 from network       import NetworkHandler
 from event         import EventHandler
 from Queue         import Queue
-
+from time          import sleep
+import threading
 pygame.init()
 
 ERLPORT_PATH = './resources/erlport-0.9.8/priv/python2/'
@@ -28,13 +29,21 @@ PANELS = (3, 3)
 PANEL_INDEX = 0
 LINES_INDEX = 1
 
+def start(serverPID):
+    app = App(serverPID)
+    threading.Thread(target=loop, args=(app,))
+
+def loop(app):
+    app.loop()
+
 def create_network(pid):
     nw_handler = NetworkHandler(pid)
 
-    def message_handler(message):
+    def message_received(message):
+        print "Got message"
         nw_handler.receive(message)
 
-    erlport.erlang.set_message_handler(message_handler)
+    erlport.erlang.set_message_handler(message_received)
     return nw_handler
 
 def rel_to_abs(rel_x, rel_y, gap = 10):
@@ -53,13 +62,13 @@ def find_pos(num):
 
 class App:
     def __init__(self, pid):
-        self.nw_handler = create_network(pid)
         self.event_handler = EventHandler()
         self.client = Client()
         self.running = True
         self.actions = {"EXIT" : self._exit, "STARTLINES" : self._startline,
                         "ENDLINES" : self._endline, "ADDPOINT" : self._addpoint,
                         "KEYDOWN" : self._keydown, "GUESS" : self._guess}
+        self.nw_handler = create_network(pid)
 
     def loop(self):
         """Main execution loop"""
@@ -99,6 +108,7 @@ class App:
 
     def _do(self, command, params):
         """Translate a string into a function and execute it"""
+        print command
         cmd_func = self.actions[command]
         cmd_func(params)
 
@@ -236,16 +246,11 @@ class Client:
         self.clock.tick(FPS_LIMIT)
 
     def localmessage(self, username, message):
-
         self.chat_panel.local_message(username, message)
 
     def globalmessage(self, username, message):
         self.chat_panel.global_message(username, message)
 
-def start(pid):
-
-    app = App(pid)
-    app.loop()
 
 if __name__ == "__main__":
     app = App(None)
