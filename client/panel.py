@@ -61,5 +61,6 @@ class Panel:
         pygame.draw.rect(self.parent, outline_color, outline, 0)
         for line in lines:
             if len(line) > 1:
+                print line
                 pygame.draw.lines(self.canvas, (0, 0, 0), False, line, 3)
         self.parent.blit(self.canvas, self.location)

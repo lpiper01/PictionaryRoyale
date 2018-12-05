@@ -83,6 +83,17 @@ handle_cast(_Request, State) ->
                          {noreply, NewState :: term(), hibernate} |
                          {stop, Reason :: normal | term(), NewState :: term()}.
 
+%%---------------------------------------
+%% TODO: TAKE THIS OUT (TEMP TESTING)
+%%---------------------------------------
+handle_info({testDrawing}, {Word, Drawer, [{Client, Points} | Rest]}) ->
+    Client ! {draw, Client, [[{150, 150}, {150, 151}, {150, 152}, {150, 153}, 
+              {150, 154}, {150, 155}, {150, 156}, {150, 157}, {150, 158}], 
+             [{151, 150}, {152, 150}, {153, 150}, {154, 150}, {155, 151},
+              {156, 150}, {157, 150}, {158, 150}, {159, 150}]]},
+    {noreply, {Word, Drawer, [{Client, Points} | Rest]}};
+        
+
 %---------------------------------------------------------------------
 % Messages of the form {join, Pid}
 % Adds the client to the current game of pictionary

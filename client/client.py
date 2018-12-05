@@ -68,7 +68,8 @@ class App:
         self.running = True
         self.actions = {"EXIT" : self._exit, "STARTLINES" : self._startline,
                         "ENDLINES" : self._endline, "ADDPOINT" : self._addpoint,
-                        "KEYDOWN" : self._keydown, "GUESS" : self._guess}
+                        "KEYDOWN" : self._keydown, "GUESS" : self._guess,
+                        "DRAW" : self._draw_changes}
         self.nw_handler = create_network(pid)
 
     def loop(self):
@@ -149,6 +150,12 @@ class App:
         print "GUESS RECEIVED"
         print params
         self.client.localmessage(username, message)
+
+    def _draw_changes(self, params):
+        username, message = params
+        print "DRAWING UPDATES RECEIVED"
+        (self.client.panels[CLIENT_NAME])[0].draw(params)
+        
 
 class Client:
     """Client for Pictionary

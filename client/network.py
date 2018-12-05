@@ -46,6 +46,7 @@ class NetworkHandler:
         print "Gottem"
         if command == Atom('guess'):
             self.inbox.append(("GUESS", [client, args]))
-
+        elif command == Atom('draw'):
+            self.inbox.append(("DRAW", [client, args]))
         else:
             print "unknown"
