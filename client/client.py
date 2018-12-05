@@ -41,7 +41,6 @@ def create_network(pid):
     nw_handler = NetworkHandler(pid)
 
     def message_received(message):
-        print "Got message"
         nw_handler.receive(message)
 
     erlport.erlang.set_message_handler(message_received)
@@ -70,6 +69,7 @@ class App:
                         "ENDLINES" : self._endline, "ADDPOINT" : self._addpoint,
                         "KEYDOWN" : self._keydown, "GUESS" : self._guess,
                         "DRAW" : self._draw_changes}
+        self.serverPid = pid
         self.nw_handler = create_network(pid)
 
     def loop(self):
@@ -102,15 +102,10 @@ class App:
             event = events.popleft()
             command = event[0]
             params = event[1]
-
-            print command
-            print params
-
             self._do(command, params)
 
     def _do(self, command, params):
         """Translate a string into a function and execute it"""
-        print command
         cmd_func = self.actions[command]
         cmd_func(params)
 
@@ -137,7 +132,8 @@ class App:
         char = params[0]
 
         if char == "return":
-            self.client.endstr()
+            self.client.endstr(self.serverPid)
+
         elif char == "backspace":
             self.client.delchar()
         # Quick and dirty - filter out nondesirable keys
@@ -147,15 +143,12 @@ class App:
 
     def _guess(self, params):
         username, message = params
-        print "GUESS RECEIVED"
-        print params
         self.client.localmessage(username, message)
 
     def _draw_changes(self, params):
         username, message = params
-        print "DRAWING UPDATES RECEIVED"
-        (self.client.panels[CLIENT_NAME])[0].draw(params)
-        
+        (self.client.panels[CLIENT_NAME])[1] = (params[1])
+
 
 class Client:
     """Client for Pictionary
@@ -184,7 +177,7 @@ class Client:
         # form: {panel_id : (Panel, [list of lines])}
         main_panel =  Panel(panel_location, PANELSIZE, self.screen)
         main_panel.set_enable(True)
-        self.panels = {CLIENT_NAME : (main_panel, [])}
+        self.panels = {CLIENT_NAME : [main_panel, []]}
 
         self.chat_panel.static_message("", "Welcome to Pictionary")
 
@@ -230,9 +223,9 @@ class Client:
         """Add a character to the chat panel entry box"""
         self.chat_panel.sendchar(char)
 
-    def endstr(self):
+    def endstr(self, pid):
         """Send string in the chat panel entry box"""
-        self.chat_panel.endstr()
+        self.chat_panel.endstr(pid)
 
     def delchar(self):
         """Delete a character from the chat panel entry box"""

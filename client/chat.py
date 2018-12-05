@@ -2,6 +2,8 @@ import pygame
 from recentlist import RecentList
 from collections import deque
 from panel import Panel
+import erlport.erlang
+from erlport.erlterms import Atom
 
 MAX_MESSAGES = 11
 LAST_SPOT = 12
@@ -40,12 +42,11 @@ class Chat:
         '''
         self.messages.add(str(status) + ": " + str(message))
 
-    def global_message(self, status, message):
+    def global_message(self, status, message, pid):
         '''Sends a message to the server and local_broadcast it
         '''
-        self.messages.add(str(status) + ": " + str(message))
-        # TODO: send to server, remove above line (wait for server reply to
-        # write our input to prevent out of order)
+        erlport.erlang.cast(pid, (Atom('guess'), Atom('garbage'), Atom(str(message))))
+#        self.local_message(status, message)
 
     def draw(self):
         self.panel.clear()
@@ -73,10 +74,10 @@ class Chat:
         if len(self.text_entry) > len(PROMPT):
             self.text_entry.pop()
 
-    def endstr(self):
+    def endstr(self, pid):
         text = self.text_entry[len(PROMPT):]
         text = ''.join(text)
-        self.global_message(self.name, text)
+        self.global_message(self.name, text, pid)
         self.text_entry = PROMPT[:] # want a copy
 
     def _display_message(self, message, num, color):
