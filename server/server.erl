@@ -92,7 +92,7 @@ handle_info({testDrawing}, {Word, Drawer, [{Client, Points} | Rest]}) ->
              [{151, 150}, {152, 150}, {153, 150}, {154, 150}, {155, 151},
               {156, 150}, {157, 150}, {158, 150}, {159, 150}]]},
     {noreply, {Word, Drawer, [{Client, Points} | Rest]}};
-        
+
 
 %---------------------------------------------------------------------
 % Messages of the form {join, Pid}

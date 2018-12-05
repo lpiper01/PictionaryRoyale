@@ -63,7 +63,7 @@ def find_pos(num):
 class App:
     def __init__(self, pid):
         self.event_handler = EventHandler()
-        self.client = Client()
+        self.client = Client(pid)
         self.running = True
         self.actions = {"EXIT" : self._exit, "STARTLINES" : self._startline,
                         "ENDLINES" : self._endline, "ADDPOINT" : self._addpoint,
@@ -161,13 +161,14 @@ class Client:
     The OTHER panel(s) draw(s) the images sent by the server
     """
 
-    def __init__(self):
+    def __init__(self, pid):
         self.size = SIZE
         self.running = True
         self.turn = False
         self.screen = pygame.display.set_mode(self.size)
         self.clock = pygame.time.Clock()
         self.num_panels = 2
+        self.serverPid = pid
 
         # Client's canvas + chat
         panel_location = find_pos(0)
@@ -209,14 +210,21 @@ class Client:
         """Ends the last line on the given panel"""
         target_panel = self.panels[panel_id]
         target_linenum = len(target_panel[LINES_INDEX]) - 1
+
+
         target_line = target_panel[LINES_INDEX][target_linenum]
         target_line.append(pos)
         target_panel[LINES_INDEX][target_linenum]= target_line[0::LINE_DIVISOR]
-
+        lines = self.panels[CLIENT_NAME][LINES_INDEX]
+        erlport.erlang.cast(self.serverPid, (Atom('draw'), erlport.erlang.self(), lines))
+        
     def addpoint(self, panel_id, pos):
         """Adds a point to the last line on the given panel"""
         target_panel = self.panels[panel_id]
         target_line = len(target_panel[LINES_INDEX]) - 1
+        print LINES_INDEX
+        print target_line
+
         target_panel[LINES_INDEX][target_line].append(pos)
 
     def sendchar(self, char):
@@ -237,9 +245,13 @@ class Client:
         self.screen.fill((0,0,0))
         self.chat_panel.draw()
 
+
+
         for user in self.panels:
             panel = self.panels[user][PANEL_INDEX]
             lines = self.panels[user][LINES_INDEX]
+
+
             panel.clear()
             panel.draw(lines)
 
