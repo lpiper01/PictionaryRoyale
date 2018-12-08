@@ -42,7 +42,9 @@ stop() ->
                               ignore.
 init([]) ->
     process_flag(trap_exit, true),
-    {ok, {ok, ok, []}}.
+
+    % {roundNum, currentWord,  currentDrawer, listOfPlayers, numPlayers}
+    {ok, {0, ok, ok, [], 0}}.
 
 %%--------------------------------------------------------------------
 %% Handles synchronous call messages that require a reply
@@ -83,34 +85,16 @@ handle_cast(_Request, State) ->
                          {noreply, NewState :: term(), hibernate} |
                          {stop, Reason :: normal | term(), NewState :: term()}.
 
-%%---------------------------------------
-%% TODO: TAKE THIS OUT (TEMP TESTING)
-%%---------------------------------------
-handle_info({testDrawing}, {Word, Drawer, [{Client, Points} | Rest]}) ->
-    Client ! {draw, Client, [[{150, 150}, {150, 151}, {150, 152}, {150, 153}, 
-              {150, 154}, {150, 155}, {150, 156}, {150, 157}, {150, 158}], 
-             [{151, 150}, {152, 150}, {153, 150}, {154, 150}, {155, 151},
-              {156, 150}, {157, 150}, {158, 150}, {159, 150}]]},
-    {noreply, {Word, Drawer, [{Client, Points} | Rest]}};
-
-
 %---------------------------------------------------------------------
 % Messages of the form {join, Pid}
 % Adds the client to the current game of pictionary
+% Only works before the game has started or after it has stopped
 %---------------------------------------------------------------------
-handle_info({join, Client}, {Word, Drawer, Players}) ->
+handle_info({join, Client}, {0, Word, Drawer, Players, NumPlayers}) ->
     io:format("~s~n", ["asdf"]),
     NewPlayers = [{Client, 0} | Players],
-    {noreply, {Word, Drawer, NewPlayers}};
-
-%---------------------------------------------------------------------
-% Messages of the form {start, Pid}
-% Starts a game of pictionary with all the current players
-%---------------------------------------------------------------------
-handle_info({start, Client}, {State}) ->
-    % TODO: Pick the first word
-    % TODO: Send that word to the first player
-    {noreply, {State}};
+    NewNum = NumPlayers + 1,
+    {noreply, {0, Word, Drawer, NewPlayers, NewNum}};
 
 %---------------------------------------------------------------------
 % Messages of the form {guess, Pid, Message}
@@ -118,30 +102,52 @@ handle_info({start, Client}, {State}) ->
 % Shows the message on every player's screen, and ends the current
 % round if the guess is correct
 %---------------------------------------------------------------------
-% Player has correctly guessed drawing word
-handle_info({guess, Client, Word}, {Word, Drawer, Players}) ->
-    NewPlayers = add_points(Players, Client),
+% Player is starting the game
+handle_info({guess, Client, start}, {0, _Word, _Drawer, Players, Num}) ->
+    NewDrawer = find_drawer(Players, 0),
+    NewWord = find_word(0),
+    NewDrawer ! {word, Client, NewWord},
+    send_message(Players, {guess, Client, start}, Client),
+    {noreply, {1, NewWord, NewDrawer, Players, Num}};
+
+% The game is over
+handle_info({guess, Client, Word}, {Round, Word, Drawer, Players, Round}) ->
+    NewPlayers = add_points(Players, Drawer),
     send_message(Players, {guess, Client, Word}, Client),
-    % TODO: Alert all clients the round is over
-    % TODO: Update word to new one
-    % TODO: Clear all pixels
-    % TODO: Send the drawer their word
-    % TODO: {noreply, {NewWord, NewDrawer, NewPlayers}};
-    {noreply, {Word, Drawer, NewPlayers}};
+    send_message(Players, {correct, Client, Word}, ok),
+    NewWord = ok,
+    NewDrawer = ok,
+    % TODO: Clear pixels
+    Winner = find_winner(NewPlayers),
+    send_message(Players, {loser, Client, ok}, Winner),
+    Winner ! {winner, Client, ok},
+    ResetPlayers = zero_points(Players),
+    {noreply, {0, NewWord, NewDrawer, ResetPlayers, Round}};
+    
+% Player has correctly guessed drawing word
+handle_info({guess, Client, Word}, {Round, Word, Drawer, Players, Num}) ->
+    NewPlayers = add_points(Players, Drawer),
+    send_message(Players, {guess, Client, Word}, Client),
+    send_message(Players, {correct, Client, Word}, ok),
+    NewWord = find_word(Round rem Num),
+    NewDrawer = find_drawer(Players, Round),
+    NewDrawer ! {word, Client, NewWord},
+    NewRound = Round + 1,
+    {noreply, {NewRound, NewWord, NewDrawer, NewPlayers, Num}};
+
 
 % Player incorrectly guessed drawing
-handle_info({guess, Client, IncorrectDrawing}, {Word, Drawer, Players}) ->
-    send_message(Players, {guess, Client, IncorrectDrawing}, Client),
-    io:write("TESTING~n"),
-    {noreply, {Word, Drawer, Players}};
+handle_info({guess, Client, Incorrect}, {Round, Word, Drawer, Players, Num}) ->
+    send_message(Players, {guess, Client, Incorrect}, Client),
+    {noreply, {Round, Word, Drawer, Players, Num}};
 
 %---------------------------------------------------------------------
 % Messages of the form {draw, Pid, Changes}
 % Sends the drawers pixel changes to all of the guessers
 %---------------------------------------------------------------------
-handle_info({draw, Client, Changes}, {Word, Drawer, Players}) ->
+handle_info({draw, Client, Changes}, {Round, Word, Drawer, Players, Num}) ->
     send_message(Players, {draw, Client, Changes}, Client),
-    {noreply, {Word, Drawer, Players}}.
+    {noreply, {Round, Word, Drawer, Players, Num}}.
 
 %%--------------------------------------------------------------------
 %% This function is called by a gen_server when it is about to
@@ -175,8 +181,49 @@ send_message([{Pid, _Points} | Rest], Message, Client) ->
 %% list with the winner's points updated
 %%--------------------------------------------------------------------
 add_points([], _Winner) ->
-    ok;
+    [];
 add_points([{Winner, Points} | Rest], Winner) ->
     [{Winner, Points + 1} | Rest];
 add_points([{Other, Points} | Rest], Winner) ->
     [{Other, Points} | add_points(Rest, Winner)].
+
+%%--------------------------------------------------------------------
+%% Given a round number, returns the next word to be drawn
+%%--------------------------------------------------------------------
+find_word(Num) ->
+    Words = [house, cat, star, face, sun, flower, shoe, hat, dog, 
+             guitar, pie, spider],
+    lists:nth((Num rem lists:flatlength(Words)) + 1, Words).
+ 
+%%--------------------------------------------------------------------
+%% Given a list of players and a round number (n), returns the PID
+%% of the nth player in the list
+%%--------------------------------------------------------------------
+find_drawer([{Client, _Points} | _Rest], 0) ->
+    Client;
+find_drawer([{_Client, _Points} | Rest], Num) ->
+    find_drawer(Rest, Num - 1).
+
+%%--------------------------------------------------------------------
+%% Given a list of players and their points, resets all of the point
+%% counters to zero
+%%--------------------------------------------------------------------
+zero_points([]) ->
+    [];
+zero_points([{Client, Points} | Rest]) ->
+    [{Client, 0} | zero_points(Rest)].
+
+%%--------------------------------------------------------------------
+%% Given a list of players and their points, determine who has the
+%% most points. In the case of a tie, picks one to be the winner
+%%--------------------------------------------------------------------
+find_winner([]) ->
+    none;
+find_winner([{Client, Points} | Rest]) ->
+    find_winner(Rest, Client, Points).
+find_winner([], Client, Points) ->
+    Client;
+find_winner([{Client, Points} | Rest], Other, Best) when Points >= Best ->
+    find_winner(Rest, Client, Points);
+find_winner([{Client, Points} | Rest], Other, Best) when Points < Best ->
+    find_winner(Rest, Other, Best).

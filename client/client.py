@@ -68,7 +68,9 @@ class App:
         self.actions = {"EXIT" : self._exit, "STARTLINES" : self._startline,
                         "ENDLINES" : self._endline, "ADDPOINT" : self._addpoint,
                         "KEYDOWN" : self._keydown, "GUESS" : self._guess,
-                        "DRAW" : self._draw_changes}
+                        "DRAW" : self._draw_changes, "WORD" : self._print_word,
+                        "CORRECT" : self._correct, "WINNER" : self._winner,
+                        "LOSER" : self._loser}
         self.serverPid = pid
         self.nw_handler = create_network(pid)
 
@@ -149,6 +151,23 @@ class App:
         username, message = params
         (self.client.panels[CLIENT_NAME])[1] = (params[1])
 
+    def _print_word(self, params):
+        username, message = params
+        print "SENDING YOU MUST DRAW MESSAGE"
+        self.client.localmessage(username, "You must draw " + str(message))
+
+    def _correct(self, params):
+        username, message = params
+        self.client.localmessage(username, "Round over! The word was " \
+                                 + str(message))
+
+    def _winner(self, params):
+        username, message = params
+        self.client.localmessage(username, "GAME OVER! YOU WON!")
+
+    def _loser(self, params):
+        username, message = params
+        self.client.localmessage(username, "GAME OVER! YOU LOST!")
 
 class Client:
     """Client for Pictionary

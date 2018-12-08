@@ -48,5 +48,13 @@ class NetworkHandler:
             self.inbox.append(("GUESS", [client, args]))
         elif command == Atom('draw'):
             self.inbox.append(("DRAW", [client, args]))
+        elif command == Atom('word'):
+            self.inbox.append(("WORD", [client, args]))
+        elif command == Atom('correct'):
+            self.inbox.append(("CORRECT", [client, args]))
+        elif command == Atom('winner'):
+            self.inbox.append(("WINNER", [client, args]))
+        elif command == Atom('loser'):
+            self.inbox.append(("LOSER", [client, args]))
         else:
             print "unknown"
