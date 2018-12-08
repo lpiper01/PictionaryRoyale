@@ -153,11 +153,11 @@ class App:
 
     def _print_word(self, params):
         username, message = params
-        print "SENDING YOU MUST DRAW MESSAGE"
         self.client.localmessage(username, "You must draw " + str(message))
 
     def _correct(self, params):
         username, message = params
+        (self.client.panels[CLIENT_NAME])[1] = []
         self.client.localmessage(username, "Round over! The word was " \
                                  + str(message))
 
@@ -241,8 +241,6 @@ class Client:
         """Adds a point to the last line on the given panel"""
         target_panel = self.panels[panel_id]
         target_line = len(target_panel[LINES_INDEX]) - 1
-        print LINES_INDEX
-        print target_line
 
         target_panel[LINES_INDEX][target_line].append(pos)
 
